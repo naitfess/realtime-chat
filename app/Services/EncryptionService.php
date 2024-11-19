@@ -121,4 +121,95 @@ class EncryptionService
 
         return $output;  // Mengembalikan hasil dekripsi
     }
+
+    public function lsbEmbed($imagePath, $message, $outputPath)
+    {
+        $img = imagecreatefrompng($imagePath);
+        $width = imagesx($img);
+        $height = imagesy($img);
+
+        // Ubah pesan menjadi biner
+        $binaryMessage = '';
+        foreach (str_split($message) as $char) {
+            $binaryMessage .= sprintf('%08b', ord($char));
+        }
+        $binaryMessage .= '00000000'; // Penanda akhir pesan
+
+        $messageIndex = 0;
+        $messageLength = strlen($binaryMessage);
+
+        for ($y = 0; $y < $height; $y++) {
+            for ($x = 0; $x < $width; $x++) {
+                if ($messageIndex >= $messageLength) break 2;
+
+                $rgb = imagecolorat($img, $x, $y);
+                $colors = imagecolorsforindex($img, $rgb);
+
+                // Sisipkan bit ke LSB warna biru
+                $blue = ($colors['blue'] & ~1) | $binaryMessage[$messageIndex];
+                $newColor = imagecolorallocate($img, $colors['red'], $colors['green'], $blue);
+                imagesetpixel($img, $x, $y, $newColor);
+
+                $messageIndex++;
+            }
+        }
+
+        imagepng($img, $outputPath);
+        imagedestroy($img);
+
+        return $outputPath;
+    }
+
+    public function lsbExtract($imagePath)
+    {
+        $img = imagecreatefrompng($imagePath);
+        $width = imagesx($img);
+        $height = imagesy($img);
+
+        $binaryMessage = '';
+        for ($y = 0; $y < $height; $y++) {
+            for ($x = 0; $x < $width; $x++) {
+                $rgb = imagecolorat($img, $x, $y);
+                $colors = imagecolorsforindex($img, $rgb);
+
+                // Ambil LSB dari warna biru
+                $binaryMessage .= $colors['blue'] & 1;
+            }
+        }
+
+        $binaryChunks = str_split($binaryMessage, 8);
+        $message = '';
+        foreach ($binaryChunks as $binaryChar) {
+            $char = chr(bindec($binaryChar));
+            if ($char === "\0") break; // Penanda akhir pesan
+            $message .= $char;
+        }
+
+        imagedestroy($img);
+
+        return $message;
+    }
+
+    public function aesEncrypt(string $data, string $key): string
+    {
+        $cipher = 'aes-256-cbc';
+        $iv = random_bytes(openssl_cipher_iv_length($cipher));
+        $encrypted = openssl_encrypt($data, $cipher, $key, 0, $iv);
+
+        // Gabungkan IV dengan data terenkripsi untuk dekripsi nanti
+        return base64_encode($iv . $encrypted);
+    }
+
+    public function aesDecrypt(string $data, string $key): string
+    {
+        $cipher = 'aes-256-cbc';
+        $data = base64_decode($data);
+
+        // Pisahkan IV dan data terenkripsi
+        $ivLength = openssl_cipher_iv_length($cipher);
+        $iv = substr($data, 0, $ivLength);
+        $encrypted = substr($data, $ivLength);
+
+        return openssl_decrypt($encrypted, $cipher, $key, 0, $iv);
+    }
 }

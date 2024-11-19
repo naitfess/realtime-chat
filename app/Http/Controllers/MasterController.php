@@ -69,17 +69,23 @@ class MasterController extends Controller
 
                     // Simpan gambar ke storage lokal
                     $image = $request->file('image');
-                    $imagePath = $image->storeAs('images', $image->hashName(), 'public');
+                    $tempImagePath = $image->getPathname();
 
-                    // Menyimpan URL gambar ke dalam database
-                    $message->content = asset('storage/' . $imagePath);
+                    // Proses steganografi untuk menyisipkan pesan
+                    $hiddenMessage = $request->hiddenMessage;
+                    $outputImagePath = storage_path('app/public/images/' . $image->hashName());
+
+                    $this->encryptionService->lsbEmbed($tempImagePath, $hiddenMessage, $outputImagePath);
+
+                    // Simpan URL gambar hasil steganografi ke database
+                    $message->content = asset('storage/images/' . $image->hashName());
                 } catch (\Exception $e) {
                     // Tangkap dan log error
-                    Log::error('Error uploading image: ' . $e->getMessage());
+                    Log::error('Error during steganography: ' . $e->getMessage());
 
                     // Mengembalikan respon error dengan pesan yang sesuai
                     return response()->json([
-                        'error' => 'There was an issue with uploading the image. Please try again later.',
+                        'error' => 'There was an issue embedding the hidden message. Please try again later.',
                         'details' => $e->getMessage()
                     ], 500);
                 }
@@ -90,19 +96,27 @@ class MasterController extends Controller
                         'file' => 'required|file|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,zip,rar|max:2048'
                     ]);
 
-                    // Simpan gambar ke storage lokal
+                    // Simpan file ke lokasi sementara
                     $file = $request->file('file');
-                    $filePath = $file->storeAs('files', $file->hashName(), 'public');
+                    $tempFilePath = $file->getPathname();
+                    $originalContent = file_get_contents($tempFilePath);
 
-                    // Menyimpan URL gambar ke dalam database
-                    $message->content = asset('storage/' . $filePath);
+                    // Enkripsi file menggunakan AES
+                    $key = hash('sha256', $sharedSecretFrom); // Kunci enkripsi diambil dari shared secret
+                    $encryptedContent = $this->encryptionService->aesEncrypt($originalContent, $key);
+
+                    // Simpan file terenkripsi ke storage
+                    $encryptedFilePath = storage_path('app/public/files/' . $file->hashName() . '.enc');
+                    file_put_contents($encryptedFilePath, $encryptedContent);
+
+                    // Simpan URL file terenkripsi ke database
+                    $message->content = asset('storage/files/' . $file->hashName() . '.enc');
                 } catch (\Exception $e) {
                     // Tangkap dan log error
-                    Log::error('Error uploading file: ' . $e->getMessage());
+                    Log::error('Error during file encryption: ' . $e->getMessage());
 
-                    // Mengembalikan respon error dengan pesan yang sesuai
                     return response()->json([
-                        'error' => 'There was an issue with uploading the file. Please try again later.',
+                        'error' => 'There was an issue encrypting the file. Please try again later.',
                         'details' => $e->getMessage()
                     ], 500);
                 }
