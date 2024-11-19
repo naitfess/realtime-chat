@@ -14,7 +14,7 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased bg-gray-800 text-white">
+    <body class="font-sans antialiased bg-gray-800 text-white lg:overflow-hidden md:overflow-visible">
         <div class="min-h-screen bg-gray-800">
             <livewire:layout.navigation />
 

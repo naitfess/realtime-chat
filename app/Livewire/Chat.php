@@ -30,7 +30,7 @@ class Chat extends Component
             })->orderBy('created_at', 'asc')->get(),
             'users' => User::where('id', '!=', Auth::id())
                 ->when($this->search, function ($query) {
-                    $query->where('name', 'like', '%' . $this->search . '%');
+                    $query->where('username', 'like', '%' . $this->search . '%');
                 })
                 ->get(),
         ]);

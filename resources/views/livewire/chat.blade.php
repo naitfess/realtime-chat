@@ -3,7 +3,7 @@
     <div class="flex flex-col lg:flex-row w-full gap-4 px-4 py-2 h-screen">
         <!-- Sidebar Section (User List) -->
         <div id="user-list"
-            class="scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-base-100 scrollbar-track-gray-700 hover:scrollbar-thin card bg-base-300 rounded-box lg:w-1/4 h-[80%] overflow-y-auto transition-all duration-300 ease-in-out ">
+            class="card bg-base-300 rounded-box lg:w-1/4 h-[80%] overflow-y-auto transition-all duration-300 ease-in-out ">
             <!-- Wrapper untuk search bar dengan z-index tinggi -->
             <div class="sticky top-0 bg-base-300 z-20 p-3">
                 <label class="input flex items-center gap-2">
@@ -23,7 +23,7 @@
                         <a
                             href="{{ route('chat', ['user' => $user->id]) }}"
                             class="{{ request()->is('chat/' . $user->id) ? 'text-secondary' : '' }}">
-                            {{ $user->name }}
+                            {{ $user->username }}
                         </a>
                     </li>
                 @endforeach
@@ -36,8 +36,12 @@
             <div wire:poll.750ms id="chat-container" class="flex flex-col flex-grow overflow-y-auto mb-4 space-y-2">
                 <!-- Ubah space-y-4 menjadi space-y-2 -->
                 <div id="chat-header"
-                    class="text-lg font-bold chat-header sticky top-0 bg-base-300 pb-3 z-10 text-primary p-4 rounded-box">
-                    {{ $this->user->name }}
+                    class=" font-bold chat-header sticky top-0 bg-base-300 pb-3 z-10 p-4 rounded-box">
+                    <div class="tooltip tooltip-right" data-tip="{{ $this->user->name }}">
+                        <button class="btn text-primary text-lg">
+                            {{ $this->user->username }}
+                        </button>
+                    </div>
                 </div>
                 @foreach ($messages as $message)
                     <div id="chat-body" class=" px-4">

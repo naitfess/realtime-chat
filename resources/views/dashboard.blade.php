@@ -24,7 +24,7 @@
                             <a class="{{ request()->is('chat/' . $user->username) ? 'text-secondary' : '' }}"
                                 href="{{ route('chat', ['user' => $user->id]) }}"
                                 onclick="openChat('{{ $user->id }}'); event.preventDefault();">
-                                {{ $user->name }}
+                                {{ $user->username }}
                             </a>
                         </li>
                     @endforeach
@@ -32,10 +32,11 @@
             </div>
             <!-- Chat Section -->
             <div id="chat-section"
-                class="scard bg-base-300 rounded-box lg:w-3/4 h-[80%] flex flex-col transition-all duration-300 ease-in-out">
+                class="scard bg-base-300 rounded-box lg:w-3/4 h-[80%] flex flex-col items-center justify-center transition-all duration-300 ease-in-out">
                 <!-- Chat Container -->
-                <p>hello</p>
+                <p class="text-secondary text-6xl">Hello</p>
             </div>
+
         </div>
     </div>
 </x-app-layout>

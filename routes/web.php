@@ -5,9 +5,6 @@ use App\Livewire\Chat;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
-use App\Livewire\LoginComponent;
-
-Route::get('/login', LoginComponent::class)->name('login');
 
 Route::get('/', function () {
     return view('dashboard', [

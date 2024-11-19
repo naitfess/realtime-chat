@@ -6,26 +6,59 @@ use App\Models\User;
 use App\Models\Message;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use App\Services\DiffieHellmanService;
+use App\Services\EncryptionService;
+
 
 class MasterController extends Controller
 {
+    protected $diffieHellmanService;
+    protected $encryptionService;
+
+    public function __construct(DiffieHellmanService $diffieHellmanService, EncryptionService $encryptionService)
+    {
+        $this->diffieHellmanService = $diffieHellmanService;
+        $this->encryptionService = $encryptionService;
+    }
 
     public function sendMessage(Request $request, $id)
     {
         $request->validate([
             'messageType' => 'required|string'
         ]);
-        $selectedUser = User::where('id', $id)->first();
+        $toUser = User::where('id', $id)->first();
+        $fromUser = Auth::user();
         $message = new Message();
+
+        // Parameter Diffie-Hellman yang disepakati bersama
+        $p = 23;  // Bilangan prima (P)
+        $g = 5;   // Generator (G)
+
+        $privateKeyFrom = $fromUser->private_key;
+        $privateKeyTo = $toUser->private_key;
+
+        $publicKeyFrom = $this->diffieHellmanService->generatePublicKey($privateKeyFrom, $p, $g);
+        $publicKeyTo = $this->diffieHellmanService->generatePublicKey($privateKeyTo, $p, $g);
+
+        $sharedSecretFrom = $this->diffieHellmanService->generateSharedSecret($publicKeyTo, $privateKeyFrom, $p);
+        $sharedSecretTo = $this->diffieHellmanService->generateSharedSecret($publicKeyFrom, $privateKeyTo, $p);
+        //memastikan keduanya sama
+        if ($sharedSecretFrom !== $sharedSecretTo) {
+            return redirect()->route('chat', ['id' => $id])->withErrors(['message_error' => 'Invalid shared secret'])->withInput();
+        }
 
         switch ($request->messageType) {
             case 'text':
                 $request->validate([
                     'message' => 'required|string'
                 ]);
-                $message->content = $request->message;
+                $encryptedMessage = $this->encryptionService->caesarEncrypt($request->message, $sharedSecretFrom);
+                $encryptedMessage = $this->encryptionService->rc4Encrypt($encryptedMessage, strval($sharedSecretTo));
+                //coba decrypt
+                // $encryptedMessage = $this->encryptionService->rc4Decrypt($encryptedMessage, strval($sharedSecretTo));
+                // $encryptedMessage = $this->encryptionService->caesarDecrypt($encryptedMessage, $sharedSecretFrom);
+                $message->content = $encryptedMessage;
                 break;
             case 'image':
                 try {
@@ -79,7 +112,7 @@ class MasterController extends Controller
         }
 
         $message->from_user_id = Auth::id();
-        $message->to_user_id = $selectedUser->id;
+        $message->to_user_id = $toUser->id;
         $message->subject = $request->messageType;
         $message->save();
 
