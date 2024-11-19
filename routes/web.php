@@ -24,4 +24,12 @@ Route::view('profile', 'profile')
     ->middleware(['auth'])
     ->name('profile');
 
+Route::get('/hidden-message', function () {
+    return view('hidden-message');
+})->middleware(['auth'])->name('hidden-message');
+
+Route::post('/hidden-message', [MasterController::class, 'extractHiddenMessage'])
+    ->middleware(['auth'])
+    ->name('hidden-message');
+
 require __DIR__ . '/auth.php';

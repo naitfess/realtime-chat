@@ -50,7 +50,10 @@ new class extends Component {
                     </x-slot>
 
                     <x-slot name="content">
-
+                        
+                        <button class="w-full text-start">
+                            <a target="_blank" href="{{ route('hidden-message') }}" class="block w-full px-4 py-2 text-start text-sm leading-5 text-white-700 hover:text-secondary focus:outline-none focus:bg-gray-800 transition duration-150 ease-in-out">Hidden Message</a>
+                        </button>
                         <!-- Authentication -->
                         <button wire:click="logout" class="w-full text-start">
                             <x-dropdown-link>

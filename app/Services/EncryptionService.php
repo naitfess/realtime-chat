@@ -13,18 +13,14 @@ class EncryptionService
     public function caesarEncrypt($text, $shift)
     {
         $result = '';
-
         foreach (str_split($text) as $char) {
-            if (ctype_alpha($char)) {  // Memeriksa apakah karakter alfabet
-                $asciiOffset = ctype_upper($char) ? 65 : 97;  // Menentukan offset untuk huruf besar atau kecil
-                // Menggunakan ord() untuk mendapatkan nilai ASCII dari karakter
-                $result .= chr((ord($char) - $asciiOffset + $shift) % 26 + $asciiOffset);
+            if (ctype_alpha($char)) {
+                $asciiOffset = ctype_upper($char) ? 65 : 97;
+                $result .= chr((ord($char) - $asciiOffset + $shift + 26) % 26 + $asciiOffset);
             } else {
-                // Karakter selain huruf tetap tidak berubah
                 $result .= $char;
             }
         }
-
         return $result;
     }
 
@@ -34,11 +30,11 @@ class EncryptionService
      * @param int $shift Jumlah pergeseran (negatif untuk dekripsi)
      * @return string Teks yang didekripsi
      */
-    public function caesarDecrypt(string $text, int $shift): string
+    public function caesarDecrypt($text, $shift)
     {
-        // Untuk dekripsi, cukup membalikkan pergeseran dengan angka negatif
-        return $this->caesarEncrypt($text, -$shift);  // Memanggil caesarEncrypt untuk dekripsi
+        return $this->caesarEncrypt($text, -$shift); // Pergeseran negatif untuk dekripsi
     }
+
 
     /**
      * Enkripsi dan Dekripsi menggunakan RC4

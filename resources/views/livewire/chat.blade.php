@@ -33,7 +33,7 @@
         <div id="chat-section"
             class="scard bg-base-300 rounded-box lg:w-3/4 h-[80%] flex flex-col transition-all duration-300 ease-in-out">
             <!-- Chat Container -->
-            <div wire:poll.750ms id="chat-container" class="flex flex-col flex-grow overflow-y-auto mb-4 space-y-2">
+            <div id="chat-container" class="flex flex-col flex-grow overflow-y-auto mb-4 space-y-2">
                 <!-- Ubah space-y-4 menjadi space-y-2 -->
                 <div id="chat-header"
                     class=" font-bold chat-header sticky top-0 bg-base-300 pb-3 z-10 p-4 rounded-box">

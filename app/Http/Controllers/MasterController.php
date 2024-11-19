@@ -45,7 +45,7 @@ class MasterController extends Controller
         $sharedSecretTo = $this->diffieHellmanService->generateSharedSecret($publicKeyFrom, $privateKeyTo, $p);
         //memastikan keduanya sama
         if ($sharedSecretFrom !== $sharedSecretTo) {
-            return redirect()->route('chat', ['id' => $id])->withErrors(['message_error' => 'Invalid shared secret'])->withInput();
+            return redirect()->route('chat', ['user' => $id])->withErrors(['message_error' => 'Invalid shared secret'])->withInput();
         }
 
         switch ($request->messageType) {
@@ -55,9 +55,7 @@ class MasterController extends Controller
                 ]);
                 $encryptedMessage = $this->encryptionService->caesarEncrypt($request->message, $sharedSecretFrom);
                 $encryptedMessage = $this->encryptionService->rc4Encrypt($encryptedMessage, strval($sharedSecretTo));
-                //coba decrypt
-                // $encryptedMessage = $this->encryptionService->rc4Decrypt($encryptedMessage, strval($sharedSecretTo));
-                // $encryptedMessage = $this->encryptionService->caesarDecrypt($encryptedMessage, $sharedSecretFrom);
+
                 $message->content = $encryptedMessage;
                 break;
             case 'image':
@@ -122,7 +120,7 @@ class MasterController extends Controller
                 }
                 break;
             default:
-                return redirect()->route('chat', ['id' => $id])->withErrors(['message_error' => 'Invalid message type'])->withInput();
+                return redirect()->route('chat', ['user' => $id])->withErrors(['message_error' => 'Invalid message type'])->withInput();
         }
 
         $message->from_user_id = Auth::id();
@@ -132,4 +130,32 @@ class MasterController extends Controller
 
         return redirect()->route('chat', ['user' => $id]);
     }
+
+    public function extractHiddenMessage(Request $request)
+{
+    $request->validate([
+        'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048'
+    ]);
+
+    try {
+        // Simpan file gambar sementara di storage lokal
+        $image = $request->file('image');
+        $tempImagePath = $image->store('images/temp', 'public');
+
+        // Ekstrak pesan tersembunyi dari gambar
+        $hiddenMessage = $this->encryptionService->lsbExtract(storage_path('app/public/' . $tempImagePath));
+
+        // Redirect ke halaman hidden message dengan hasil
+        return redirect()->route('hidden-message')->with('hiddenMessage', $hiddenMessage);
+    } catch (\Exception $e) {
+        // Tangani error dan log
+        Log::error('Error during steganography extraction: ' . $e->getMessage());
+
+        // Redirect kembali dengan pesan error
+        return redirect()->route('hidden-message')
+            ->withErrors(['error' => 'There was an issue extracting the hidden message. Please try again later.']);
+    }
+}
+
+    
 }
